@@ -1,0 +1,90 @@
+from flask import render_template, request, redirect, session, flash, url_for, send_from_directory;
+from jogoteca import app, db;
+from models import Jogos;
+from helpers import recupera_imagem, deletaCapa, FormularioJogo;
+import time;
+
+@app.route("/")
+def index():
+    jogos_lista = Jogos.query.order_by(Jogos.id)
+    return render_template("lista.html", titulo ="Jogos", jogos=jogos_lista);
+
+@app.route("/novo")
+def novoJogo():
+    if "usuario_logado" not in session or session["usuario_logado"] is None:
+        return redirect(url_for("login", proxima=url_for("novoJogo")));
+    form = FormularioJogo();
+    return render_template("novoJogo.html", titulo = "Novo Jogo", form=form);
+
+@app.route("/criar", methods=["POST",]) 
+def criarJogo():
+    form = FormularioJogo(request.form);
+    if not form.validate_on_submit():
+        return redirect("novoJogo")
+    
+    nome = form.nome.data;
+    categoria = form.categoria.data;
+    console = form.console.data;
+        
+    jogo = Jogos.query.filter_by(nome=nome).first();
+    if jogo:
+        flash(f"Jogo {nome} já existente");
+        return  redirect(url_for("index"));
+    
+    novo_Jogo = Jogos(nome=nome, categoria=categoria, console=console) # type: ignore
+    db.session.add(novo_Jogo) 
+    db.session.commit()
+    
+    arquivo = request.files["arquivoImg"];
+    
+    upload_path = app.config["UPLOAD_PATH"]
+    timestamp = time.time();
+    deletaCapa(novo_Jogo.id);
+    arquivo.save(f"{upload_path}/capa{novo_Jogo.id}-{timestamp}.jpg" );
+    return redirect(url_for("index"));
+
+@app.route("/editar/<int:id>")
+def editarJogo(id):
+    if "usuario_logado" not in session or session["usuario_logado"] is None:
+        return redirect(url_for("login", proxima=url_for("editarJogo", id = id)));
+    idJogo = Jogos.query.filter_by(id=id).first();
+    form = FormularioJogo();
+    
+    form.nome.data = idJogo.nome;
+    form.categoria.data = idJogo.categoria;
+    form.console.data = idJogo.console;
+    capa_jogo = recupera_imagem(id);
+    return render_template("editarJogo.html", titulo = "Editar Jogo", id=id, capa_jogo=capa_jogo, form=form );
+
+@app.route("/atualizar", methods=["POST",])  
+def atualizarJogo():
+    form = FormularioJogo(request.form);
+    if form.validate_on_submit():     
+        jogo = Jogos.query.filter_by(id=request.form["id"]).first();
+        jogo.nome = form.nome.data;
+        jogo.categoria = form.categoria.data;
+        jogo.console = form.console.data;
+        
+        db.session.add(jogo);
+        db.session.commit();
+
+        arquivo = request.files["arquivoImg"];
+        upload_path = app.config["UPLOAD_PATH"];
+        timestamp = time.time();
+        deletaCapa(jogo.id);
+        arquivo.save(f"{upload_path}/capa{jogo.id}-{timestamp}.jpg" );
+
+    return redirect(url_for("index"));
+
+@app.route("/deletar/<int:id>")
+def deletarJogo(id):
+    if "usuario_logado" not in session or session["usuario_logado"] is None:
+        return redirect(url_for("login", proxima=url_for("deletarJogo", id = id)));
+    Jogos.query.filter_by(id=id).delete();
+    db.session.commit();
+    flash("Jogo deletado com sucesso!!!");
+    return redirect(url_for("index")); 
+
+@app.route("/uploads/<nome_arquivo>")
+def imagem(nome_arquivo):
+    return send_from_directory("uploads", nome_arquivo)
