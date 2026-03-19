@@ -5,4 +5,14 @@
   justify-content: center;
 }
 
+.container_eventos{
+  width: 1000px;
+  max-width: 90%;
+  margin: 0 auto;
+}
 
+.eventos{
+  display: flex;
+  gap: 24px;
+  flex-wrap: nowrap;
+}
