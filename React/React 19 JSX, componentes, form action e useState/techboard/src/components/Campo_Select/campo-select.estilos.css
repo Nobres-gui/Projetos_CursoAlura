@@ -1,0 +1,14 @@
+.campo_select{
+    border-radius: 8px;
+    background-color: transparent;
+    border: 1px solid #4A4949;
+    font-size: 16px;
+    line-height: 120%;
+    color: #FFFFFF;
+    padding: 8px 16px;
+}
+
+.campo_select option{
+    background-color: #212121;
+    color: #FFFFFF;
+}

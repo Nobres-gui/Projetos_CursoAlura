@@ -1,0 +1,23 @@
+
+
+mat-toolbar{
+    width: 100%;
+    background-color: rgb(45, 95, 95);
+    margin: 0;
+}
+
+span{
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+a{
+    color: white;
+    text-decoration: none;
+    margin-left: 20px;
+}
+
+.ativo{
+    color: red;
+}
